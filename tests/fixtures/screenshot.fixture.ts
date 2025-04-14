@@ -1,61 +1,39 @@
+/**
+ * Copyright (c) Microsoft Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ */
+
 import { test as base } from '@playwright/test';
-import * as fs from 'fs';
 import * as path from 'path';
-
-const SCREENSHOT_DIR = './test-results';
-
-const getTimestampedFileName = (prefix: string) => {
-    const date = new Date();
-    const timestamp = date.toISOString()
-        .replace(/[:.]/g, '-')
-        .replace('T', '-')
-        .split('.')[0];
-    return path.join(SCREENSHOT_DIR, `${timestamp}-${prefix}.png`);
-};
-
-const cleanScreenshotDirectory = () => {
-    if (fs.existsSync(SCREENSHOT_DIR)) {
-        const files = fs.readdirSync(SCREENSHOT_DIR);
-        for (const file of files) {
-            const filePath = path.join(SCREENSHOT_DIR, file);
-            if (fs.lstatSync(filePath).isFile() && file.endsWith('.png')) {
-                fs.unlinkSync(filePath);
-            }
-        }
-    } else {
-        fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
-    }
-};
+import * as fs from 'fs';
 
 export type TestFixtures = {
-    autoScreenshot: void;
+  screenshotOnFailure: void;
 };
 
-const fixture = base.extend<TestFixtures>({
-    autoScreenshot: [async ({ page }, use, testInfo) => {
-        // Clean screenshot directory before first test
-        if (testInfo.workerIndex === 0 && testInfo.retry === 0) {
-            cleanScreenshotDirectory();
-        }
+export const test = base.extend<TestFixtures>({
+  screenshotOnFailure: [async ({ }, use, testInfo) => {
+    await use();
+    const testFailed = testInfo.status !== testInfo.expectedStatus;
 
-        // Take screenshot before test
-        const beforePath = getTimestampedFileName(`${testInfo.title}-before`);
-        await page.screenshot({ path: beforePath });
-        await testInfo.attach('before-test', {
-            path: beforePath,
-            contentType: 'image/png'
-        });
+    if (testFailed) {
+      const screenshotPath = testInfo.outputPath('failure.png');
+      if (testInfo.retry === testInfo.project.retries) {
+        const screenshotName = `${path.basename(testInfo.file, '.spec.ts')}-${testInfo.title.replace(/\s+/g, '-')}-${testInfo.project.name}`;
+        const targetDir = path.join(testInfo.outputDir, screenshotName);
 
-        await use();
+        if (!fs.existsSync(targetDir))
+          fs.mkdirSync(targetDir, { recursive: true });
 
-        // Take screenshot after test
-        const afterPath = getTimestampedFileName(`${testInfo.title}-after`);
-        await page.screenshot({ path: afterPath, fullPage: true });
-        await testInfo.attach('after-test', {
-            path: afterPath,
-            contentType: 'image/png'
-        });
-    }, { auto: true }]
+        const attachmentsDir = path.join(targetDir, 'attachments');
+        if (!fs.existsSync(attachmentsDir))
+          fs.mkdirSync(attachmentsDir, { recursive: true });
+
+        if (fs.existsSync(screenshotPath))
+          fs.copyFileSync(screenshotPath, path.join(attachmentsDir, 'failure.png'));
+      }
+    }
+  }, { auto: true }],
 });
-
-export { fixture as test };
