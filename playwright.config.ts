@@ -22,6 +22,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'list',
+  reporter: [
+    ['html', { open: 'never' }], // Configure to always open the report
+    ['list']  // Keeping list reporter for CLI output
+  ],
+  use: {
+    baseURL: 'https://testpages.eviltester.com/styled/',
+  },
   projects: [{ name: 'firefox' }],
 });
