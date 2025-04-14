@@ -1,18 +1,27 @@
+/**
+ * Copyright (c) Microsoft Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ */
+
 export const TEST_DATA = {
-    FULL_FORM: {
-        username: 'test.user@example.com',
-        password: 'SecurePass123',
-        comments: 'This is a test comment',
-        checkboxIndex: 0,
-        radioIndex: 0,
-        dropdownValue: 'dd1',
-        multiSelectValues: ['ms1', 'ms2']
-    },
-    MINIMAL_FORM: {
-        username: 'minimal.user@example.com'
-    }
+  FULL_FORM: {
+    username: 'testUser',
+    email: 'test@example.com',
+    password: 'password123',
+    confirmPassword: 'password123',
+    phone: '1234567890',
+    address: '123 Test St',
+    terms: true
+  },
+  MINIMAL_FORM: {
+    username: 'minimalUser',
+    password: 'pass123',
+    terms: true
+  }
 };
 
 export const EXPECTED_RESULTS = {
-    SUCCESS_MESSAGE: 'Processed form data'
+  SUCCESS_MESSAGE: 'Processed form data'
 };
