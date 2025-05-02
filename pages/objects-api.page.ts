@@ -83,7 +83,7 @@ export class ObjectsApiPage extends BaseApiPage {
   }
 
   async updateByPatchObjectWithResponse(id: string, object: any): Promise<APIResponse> {
-    console.log((`URL: ${this.baseUrl}/${id}`));   
+    console.log((`URL: ${this.baseUrl}/${id}`));
     const response = await this.request.patch(`${this.baseUrl}/${id}`, {
       data: object
     });

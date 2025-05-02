@@ -175,7 +175,7 @@ test.describe('REST API Objects Tests', () => {
     const randomIndex = Math.floor(Math.random() * allObjects.length);
     const targetId = allObjects[randomIndex].id;
     const originalObject = await objectsPage.getObjectById(targetId);
-    
+
     // Prepare update data while keeping some original fields
     const updateData = {
       name: `Updated ${originalObject.name}`,
@@ -222,7 +222,7 @@ test.describe('REST API Objects Tests', () => {
     const randomIndex = Math.floor(Math.random() * allObjects.length);
     const targetId = allObjects[randomIndex].id;
     const originalObject = await objectsPage.getObjectById(targetId);
-    
+
     for (const testCase of API_DATA.INVALID_UPDATES) {
       const response = await objectsPage.updateObjectWithResponse(targetId, testCase.data);
       const status = response.status();
@@ -249,33 +249,32 @@ test.describe('REST API Objects Tests', () => {
 
     const response = await objectsPage.updateObjectWithResponse(nonExistentId, updateData);
     expect(response.status()).toBe(404);
-    
+
     const responseData = await response.json();
     expect(objectsPage.isValidObjectResponse(responseData)).toBeFalsy();
   });
 
   test('should support partial updates via PUT - only name updates allowed', async () => {
     // First get all objects to pick a random one
-    const allObjects = await objectsPage.getAllObjects();
-    const targetId = "7";
+    const targetId = '7';
     const originalObject = await objectsPage.getObjectById(targetId);
-    
+
     // Test valid name-only updates
     for (const validUpdate of API_DATA.TEST_OBJECTS.PARTIAL_UPDATES.valid) {
       console.log('Testing valid update:', JSON.stringify(validUpdate));
       const response = await objectsPage.updateByPatchObjectWithResponse(targetId, validUpdate);
       const responseData = await response.json();
-console.log('Response status:', response.status());
+      console.log('Response status:', response.status());
       console.log('Response body:', responseData);
       // Verify response status and format
       expect(response.ok()).toBeTruthy();
       expect(response.status()).toBe(200);
       expect(objectsPage.isValidObjectResponse(responseData)).toBeTruthy();
-      
+
       // Verify only name was updated
       const updatedObject = await objectsPage.getObjectById(targetId);
       expect(updatedObject.name).toBe(validUpdate.name);
-      
+
       // Verify other fields remain unchanged
       expect(updatedObject.id).toBe(originalObject.id);
       expect(updatedObject.data).toEqual(originalObject.data);
@@ -289,9 +288,9 @@ console.log('Response status:', response.status());
       const status = response.status();
       console.log('Response status:', status);
       console.log('Response body:', await response.json());
-      
+
       expect(status).toBe(invalidUpdate.expectedStatus);
-      
+
       // Verify object remains unchanged
       const unchangedObject = await objectsPage.getObjectById(targetId);
       expect(unchangedObject).toEqual(originalObject);

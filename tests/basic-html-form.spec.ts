@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  */
 
-import { expect, test as baseTest } from '@playwright/test';
+import { test as baseTest } from '@playwright/test';
 import { BasicHtmlFormPage } from '../pages/basic-html-form.page';
 import { TEST_DATA } from './test-data/form-data';
 

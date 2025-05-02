@@ -69,9 +69,8 @@ export class BasicHtmlFormPage {
     ];
 
     for (const { key, action } of actions) {
-      if (formData[key as keyof typeof formData] !== undefined) {
+      if (formData[key as keyof typeof formData] !== undefined)
         await action();
-      }
     }
   }
 
