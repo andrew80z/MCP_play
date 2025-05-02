@@ -27,7 +27,8 @@ export default defineConfig({
     ['list']  // Keeping list reporter for CLI output
   ],
   use: {
-    baseURL: 'https://testpages.eviltester.com/styled/',
+    baseURL: 'https://testpages.eviltester.com/styled',
   },
+  snapshotDir: './tests/snapshots',
   projects: [{ name: 'firefox' }],
 });
