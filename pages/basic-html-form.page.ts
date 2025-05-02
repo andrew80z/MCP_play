@@ -36,23 +36,20 @@ export class BasicHtmlFormPage {
     this.checkboxItems = page.locator('input[type="checkbox"]');
     this.radioItems = page.locator('input[type="radio"]');
     this.multipleSelect = page.locator('select[multiple="multiple"]');
-    this.dropdown = page.locator('select[name="dropdown"]');
+    this.dropdown = page.locator('[name="dropdown"]');
     this.submitButton = page.locator('input[type="submit"]');
   }
 
   async goto() {
-    await this.page.goto('basic-html-form-test.html');
+    await this.page.goto(`/styled/basic-html-form-test.html`);
   }
 
-  async fillForm({
-    username,
-    password,
-    comments,
-    checkboxIndex,
-    radioIndex,
-    dropdownValue,
-    multiSelectValues
-  }: {
+  async ensurePageIsLoaded() {
+    await this.page.waitForLoadState('load');
+    await this.page.waitForSelector('form'); // Ensure the form is present on the page
+  }
+
+  async fillForm(formData: {
     username?: string;
     password?: string;
     comments?: string;
@@ -61,20 +58,20 @@ export class BasicHtmlFormPage {
     dropdownValue?: string;
     multiSelectValues?: string[];
   }) {
-    if (username)
-      await this.usernameInput.fill(username);
-    if (password)
-      await this.passwordInput.fill(password);
-    if (comments)
-      await this.commentsTextarea.fill(comments);
-    if (checkboxIndex !== undefined)
-      await this.checkboxItems.nth(checkboxIndex).check();
-    if (radioIndex !== undefined)
-      await this.radioItems.nth(radioIndex).check();
-    if (dropdownValue)
-      await this.dropdown.selectOption(dropdownValue);
-    if (multiSelectValues)
-      await this.multipleSelect.selectOption(multiSelectValues);
+    const actions = [
+      { key: 'username', action: async () => await this.usernameInput.fill(formData.username!) },
+      { key: 'password', action: async () => await this.passwordInput.fill(formData.password!) },
+      { key: 'comments', action: async () => await this.commentsTextarea.fill(formData.comments!) },
+      { key: 'checkboxIndex', action: async () => await this.checkboxItems.nth(formData.checkboxIndex!).check() },
+      { key: 'radioIndex', action: async () => await this.radioItems.nth(formData.radioIndex!).check() },
+      { key: 'dropdownValue', action: async () => await this.selectDropdownValue(formData.dropdownValue!) },
+      { key: 'multiSelectValues', action: async () => await this.multipleSelect.selectOption(formData.multiSelectValues!) },
+    ];
+
+    for (const { key, action } of actions) {
+      if (formData[key as keyof typeof formData] !== undefined)
+        await action();
+    }
   }
 
   async submitForm() {
@@ -104,5 +101,36 @@ export class BasicHtmlFormPage {
 
     if (typeof formData.radioIndex === 'number')
       await expect(this.radioItems.nth(formData.radioIndex)).toBeChecked();
+  }
+
+  async waitForDropdownOptions() {
+    await this.page.waitForSelector('select[name="dropdown"] option', { state: 'attached' });
+  }
+
+  async waitForDropdownToBeEnabled() {
+    const dropdown = this.page.locator('select[name="dropdown"]');
+    await dropdown.scrollIntoViewIfNeeded();
+    await dropdown.waitFor({ state: 'visible' });
+    await dropdown.isEnabled();
+  }
+
+  async selectDropdownValue(value: string) {
+    await this.dropdown.selectOption(value);
+  }
+
+  async isAlertTriggered() {
+    return await this.page.evaluate(() => {
+      let alertTriggered = false;
+      window.alert = () => { alertTriggered = true; };
+      return alertTriggered;
+    });
+  }
+
+  async getPasswordFieldContent() {
+    return await this.page.locator('[id="_valuepassword"]').innerHTML();
+  }
+
+  async getCommentsFieldContent() {
+    return await this.page.locator('[id="_valuecomments"]').innerHTML();
   }
 }

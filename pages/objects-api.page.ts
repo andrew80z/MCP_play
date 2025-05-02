@@ -75,6 +75,21 @@ export class ObjectsApiPage extends BaseApiPage {
     return response;
   }
 
+  async updateObjectWithResponse(id: string, object: any): Promise<APIResponse> {
+    const response = await this.request.put(`${this.baseUrl}/${id}`, {
+      data: object
+    });
+    return response;
+  }
+
+  async updateByPatchObjectWithResponse(id: string, object: any): Promise<APIResponse> {
+    console.log((`URL: ${this.baseUrl}/${id}`));
+    const response = await this.request.patch(`${this.baseUrl}/${id}`, {
+      data: object
+    });
+    return response;
+  }
+
   isValidObjectResponse(obj: any): obj is ApiObject {
     return typeof obj === 'object'
       && obj !== null

@@ -8,9 +8,11 @@
 import { test as base } from '@playwright/test';
 import * as path from 'path';
 import * as fs from 'fs';
+import { BasicHtmlFormPage } from '../../pages/basic-html-form.page';
 
 export type TestFixtures = {
   screenshotOnFailure: void;
+  formPage: BasicHtmlFormPage;
 };
 
 export const test = base.extend<TestFixtures>({
@@ -36,4 +38,9 @@ export const test = base.extend<TestFixtures>({
       }
     }
   }, { auto: true }],
+  formPage: async ({ page }, use) => {
+    const formPage = new BasicHtmlFormPage(page);
+    await formPage.goto();
+    await use(formPage);
+  },
 });

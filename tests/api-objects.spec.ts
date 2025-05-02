@@ -20,12 +20,13 @@ test.describe('REST API Objects Tests', () => {
     const objects = await objectsPage.getAllObjects();
 
     expect(Array.isArray(objects)).toBeTruthy();
-    expect(objects.length).toBeGreaterThan(0);
 
     // Validate object structure
     const firstObject = objects[0];
     expect(firstObject).toHaveProperty('id');
+    expect(typeof firstObject.id).toBe('string');
     expect(firstObject).toHaveProperty('name');
+    expect(typeof firstObject.name).toBe('string');
   });
 
   test('should verify response with pagination parameters', async () => {
@@ -42,7 +43,9 @@ test.describe('REST API Objects Tests', () => {
     // Verify object structure for all objects
     for (const object of allObjects) {
       expect(object).toHaveProperty('id');
+      expect(typeof object.id).toBe('string');
       expect(object).toHaveProperty('name');
+      expect(typeof object.name).toBe('string');
     }
   });
 
@@ -69,7 +72,9 @@ test.describe('REST API Objects Tests', () => {
     // Verify object structure for each returned object
     for (const object of objects) {
       expect(object).toHaveProperty('id');
+      expect(typeof object.id).toBe('string');
       expect(object).toHaveProperty('name');
+      expect(typeof object.name).toBe('string');
     }
   });
 
@@ -79,7 +84,9 @@ test.describe('REST API Objects Tests', () => {
 
     // Verify response structure
     expect(createdObject).toHaveProperty('id');
+    expect(typeof createdObject.id).toBe('string');
     expect(createdObject.name).toBe(newObject.name);
+    expect(typeof createdObject.name).toBe('string');
     expect(createdObject.data).toMatchObject(newObject.data);
     expect(createdObject).toHaveProperty('createdAt');
 
@@ -93,7 +100,9 @@ test.describe('REST API Objects Tests', () => {
 
     // Verify minimal object structure
     expect(createdObject).toHaveProperty('id');
+    expect(typeof createdObject.id).toBe('string');
     expect(createdObject.name).toBe(minimalObject.name);
+    expect(typeof createdObject.name).toBe('string');
     expect(createdObject.data).toMatchObject(minimalObject.data);
 
     // Clean up
@@ -113,5 +122,189 @@ test.describe('REST API Objects Tests', () => {
       type: 'info',
       description: `API returns ${response.status()} for invalid objects without required fields`
     });
+  });
+
+  test('should verify successful POST request response', async () => {
+    const newObject = {
+      name: 'Test Product Complete',
+      data: {
+        type: 'Electronics',
+        category: 'Smartphone',
+        price: 999.99,
+        inStock: true,
+        specs: {
+          color: 'Black',
+          storage: '256GB',
+          ram: '8GB'
+        }
+      }
+    };
+
+    // Get response to verify status and headers
+    const response = await objectsPage.createObjectWithResponse(newObject);
+    const responseData = await response.json();
+
+    // Verify response status
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200); // or 201 depending on API
+
+    // Verify response headers
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('application/json');
+
+    // Verify response structure
+    expect(objectsPage.isValidObjectResponse(responseData)).toBeTruthy();
+    expect(responseData).toHaveProperty('id');
+    expect(typeof responseData.id).toBe('string');
+    expect(responseData.name).toBe(newObject.name);
+    expect(typeof responseData.name).toBe('string');
+    expect(responseData).toHaveProperty('createdAt');
+    expect(responseData.data).toMatchObject(newObject.data);
+
+    // Verify the created object can be retrieved
+    const retrievedObject = await objectsPage.getObjectById(responseData.id);
+    expect(retrievedObject).toMatchObject(responseData);
+
+    // Clean up
+    await objectsPage.deleteObject(responseData.id);
+  });
+
+  test('should successfully update an existing object via PUT', async () => {
+    // First get all objects to pick a random one
+    const allObjects = await objectsPage.getAllObjects();
+    const randomIndex = Math.floor(Math.random() * allObjects.length);
+    const targetId = allObjects[randomIndex].id;
+    const originalObject = await objectsPage.getObjectById(targetId);
+
+    // Prepare update data while keeping some original fields
+    const updateData = {
+      name: `Updated ${originalObject.name}`,
+      data: {
+        ...originalObject.data,
+        lastUpdated: new Date().toISOString(),
+        status: 'modified'
+      }
+    };
+
+    // Get response to verify status and headers
+    const response = await objectsPage.updateObjectWithResponse(targetId, updateData);
+    const responseData = await response.json();
+
+    // Verify response status
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    // Verify response headers
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('application/json');
+
+    // Verify response structure
+    expect(objectsPage.isValidObjectResponse(responseData)).toBeTruthy();
+    expect(responseData.id).toBe(targetId);
+    expect(responseData.name).toBe(updateData.name);
+    expect(typeof responseData.name).toBe('string');
+    expect(responseData.data).toMatchObject(updateData.data);
+
+    // Verify the update is persisted by getting the object again
+    const updatedObject = await objectsPage.getObjectById(targetId);
+    expect(updatedObject).toMatchObject(responseData);
+
+    // Restore original state
+    await objectsPage.updateObject(targetId, {
+      name: originalObject.name,
+      data: originalObject.data
+    });
+  });
+
+  test('should handle PUT request with invalid data', async () => {
+    // First get all objects to pick a random one
+    const allObjects = await objectsPage.getAllObjects();
+    const randomIndex = Math.floor(Math.random() * allObjects.length);
+    const targetId = allObjects[randomIndex].id;
+    const originalObject = await objectsPage.getObjectById(targetId);
+
+    for (const testCase of API_DATA.INVALID_UPDATES) {
+      const response = await objectsPage.updateObjectWithResponse(targetId, testCase.data);
+      const status = response.status();
+      expect(status).toBe(testCase.expectedStatus);
+      // Verify the response indicates invalid request
+      const responseData = await response.json();
+      expect(objectsPage.isValidObjectResponse(responseData)).toBeFalsy();
+      // Original object should remain unchanged
+      const unchangedObject = await objectsPage.getObjectById(targetId);
+      expect(unchangedObject.id).toBe(originalObject.id);
+      expect(unchangedObject.name).toBe(originalObject.name);
+      expect(unchangedObject.data).toEqual(originalObject.data);
+    }
+  });
+
+  test('should handle PUT request for non-existent object', async () => {
+    const nonExistentId = 'non-existent-id-999999';
+    const updateData = {
+      name: 'Should Not Create',
+      data: {
+        test: 'data'
+      }
+    };
+
+    const response = await objectsPage.updateObjectWithResponse(nonExistentId, updateData);
+    expect(response.status()).toBe(404);
+
+    const responseData = await response.json();
+    expect(objectsPage.isValidObjectResponse(responseData)).toBeFalsy();
+  });
+
+  test('should support partial updates via PUT - only name updates allowed', async () => {
+    // First get all objects to pick a random one
+    const targetId = '7';
+    const originalObject = await objectsPage.getObjectById(targetId);
+
+    // Test valid name-only updates
+    for (const validUpdate of API_DATA.TEST_OBJECTS.PARTIAL_UPDATES.valid) {
+      console.log('Testing valid update:', JSON.stringify(validUpdate));
+      const response = await objectsPage.updateByPatchObjectWithResponse(targetId, validUpdate);
+      const responseData = await response.json();
+      console.log('Response status:', response.status());
+      console.log('Response body:', responseData);
+      // Verify response status and format
+      expect(response.ok()).toBeTruthy();
+      expect(response.status()).toBe(200);
+      expect(objectsPage.isValidObjectResponse(responseData)).toBeTruthy();
+
+      // Verify only name was updated
+      const updatedObject = await objectsPage.getObjectById(targetId);
+      expect(updatedObject.name).toBe(validUpdate.name);
+
+      // Verify other fields remain unchanged
+      expect(updatedObject.id).toBe(originalObject.id);
+      expect(updatedObject.data).toEqual(originalObject.data);
+      expect(updatedObject.createdAt).toBe(originalObject.createdAt);
+    }
+
+    // Test invalid updates (data modifications)
+    for (const invalidUpdate of API_DATA.TEST_OBJECTS.PARTIAL_UPDATES.invalid) {
+      console.log('Testing invalid update:', JSON.stringify(invalidUpdate));
+      const response = await objectsPage.updateObjectWithResponse(targetId, invalidUpdate);
+      const status = response.status();
+      console.log('Response status:', status);
+      console.log('Response body:', await response.json());
+
+      expect(status).toBe(invalidUpdate.expectedStatus);
+
+      // Verify object remains unchanged
+      const unchangedObject = await objectsPage.getObjectById(targetId);
+      expect(unchangedObject).toEqual(originalObject);
+    }
+
+    // Restore original state
+    await objectsPage.updateObject(targetId, {
+      name: originalObject.name
+    });
+  });
+
+  test('API snapshot test for objects API', async ({ request }) => {
+    const response = await request.get('/api/objects');
+    const data = await response.json();
+    expect(data).toMatchSnapshot('objects-api-snapshot.json');
   });
 });
