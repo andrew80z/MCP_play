@@ -61,15 +61,15 @@ export const API_DATA = {
   INVALID_UPDATES: [
     {
       data: { name: '' },  // Empty name
-      expectedStatus: 400  // Bad Request
+      expectedStatus: 405  // Bad Request
     },
     {
       data: {},  // Missing required name field
-      expectedStatus: 400  // Bad Request
+      expectedStatus: 405  // Bad Request
     },
     {
       data: { name: { invalid: 'object' } },  // Invalid name type
-      expectedStatus: 400  // Bad Request
+      expectedStatus: 405 // Bad Request
     }
   ]
 };

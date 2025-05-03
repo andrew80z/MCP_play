@@ -2,3 +2,5 @@ lib/
 node_modules/
 test-results/
 .github/copilot-instructions.md
+playwright-report/*
+playwright-report/index.html
