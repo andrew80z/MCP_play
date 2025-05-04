@@ -254,11 +254,8 @@ test.describe('REST API Objects Tests', () => {
 
     // Test valid name-only updates
     for (const validUpdate of API_DATA.TEST_OBJECTS.PARTIAL_UPDATES.valid) {
-      console.log('Testing valid update:', JSON.stringify(validUpdate));
       const response = await objectsPage.updateByPatchObjectWithResponse(targetId, validUpdate);
       const responseData = await response.json();
-      console.log('Response status:', response.status());
-      console.log('Response body:', responseData);
       // Verify response status and format
       expect(response.ok()).toBeFalsy();
       expect(response.status()).not.toBe(200);
@@ -276,19 +273,13 @@ test.describe('REST API Objects Tests', () => {
 
     // Test invalid updates (data modifications)
     for (const invalidUpdate of API_DATA.TEST_OBJECTS.PARTIAL_UPDATES.invalid) {
-      console.log('Testing invalid update:', JSON.stringify(invalidUpdate));
       const response = await objectsPage.updateObjectWithResponse(targetId, invalidUpdate);
       const status = response.status();
-      console.log('Response status:', status);
-      console.log('Response body:', await response.json());
-
       expect(status).toBe(invalidUpdate.expectedStatus);
-
       // Verify object remains unchanged
       const unchangedObject = await objectsPage.getObjectById(targetId);
       expect(unchangedObject).toEqual(originalObject);
     }
-
     // Restore original state
     await objectsPage.updateObject(targetId, {
       name: originalObject.name
