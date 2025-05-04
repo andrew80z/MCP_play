@@ -23,7 +23,7 @@ export class BasicAjaxTestPage {
   }
 
   async goto() {
-    await this.page.goto(`/basic-ajax-test.html`);
+    await this.page.goto(`styled/basic-ajax-test.html`);
   }
 
   async selectCategory(category: string) {
@@ -35,10 +35,10 @@ export class BasicAjaxTestPage {
   }
 
   async submitForm() {
-    await this.page.click('#ajaxButton');
+    await this.page.click('[name="submitbutton"]');
   }
 
-  async getResultText() {
-    return this.page.locator('#_id').textContent();
+  async getIdText() {
+    return this.page.locator('[id="_valueid"]').textContent();
   }
 }
